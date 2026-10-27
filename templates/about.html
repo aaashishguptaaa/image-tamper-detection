@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About | Image Forgery Detection</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-brand">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span>ForgeryDetect</span>
+  </div>
+  <div class="nav-links">
+    <a href="/"><i class="fa fa-home"></i> Home</a>
+    <a href="/about" class="active"><i class="fa fa-info-circle"></i> About</a>
+  </div>
+</nav>
+
+<section class="about-hero">
+  <h1>About This Project</h1>
+  <p>Image Forgery Detection and Localization using ELA, SIFT and CNN</p>
+</section>
+
+<section class="about-content">
+  <div class="about-grid">
+
+    <div class="about-card">
+      <h2><i class="fa fa-bullseye"></i> Project Goal</h2>
+      <p>
+        Digital image forgery is a growing threat in media, journalism, and legal contexts.
+        This system provides a forensic tool to automatically detect and localize tampered
+        regions in digital photographs using a hybrid approach combining three powerful
+        image processing techniques.
+      </p>
+    </div>
+
+    <div class="about-card">
+      <h2><i class="fa fa-layer-group"></i> ELA — Error Level Analysis</h2>
+      <p>
+        JPEG images lose quality with each save. When an image is tampered, the edited
+        regions are re-saved at a different compression level than the rest. ELA reveals
+        this inconsistency by re-saving at a known quality and amplifying the pixel difference.
+        Tampered regions appear brighter in the ELA map.
+      </p>
+      <div class="formula-box">
+        ELA = |Original − Re-saved| × scale_factor
+      </div>
+    </div>
+
+    <div class="about-card">
+      <h2><i class="fa fa-vector-square"></i> SIFT — Scale Invariant Feature Transform</h2>
+      <p>
+        Copy-move forgery involves copying a region from within the same image and pasting it
+        elsewhere to hide or duplicate content. SIFT detects this by extracting distinctive
+        feature descriptors from keypoints and finding spatially separated matches within the
+        same image using FLANN-based matching with Lowe's ratio test.
+      </p>
+    </div>
+
+    <div class="about-card">
+      <h2><i class="fa fa-brain"></i> CNN — Convolutional Neural Network</h2>
+      <p>
+        A deep CNN trained on ELA representations of real and forged images learns to
+        classify authenticity. The architecture uses 4 convolutional blocks with batch
+        normalization, followed by dense layers with dropout for regularization.
+      </p>
+      <div class="formula-box">
+        Input: ELA(128×128×3) → Conv×4 → Dense → Sigmoid → P(fake)
+      </div>
+    </div>
+
+    <div class="about-card">
+      <h2><i class="fa fa-balance-scale"></i> Combined Score</h2>
+      <p>
+        Final forgery probability is a weighted combination of all three techniques,
+        giving highest weight to the CNN (most accurate when trained), followed by ELA.
+      </p>
+      <div class="formula-box">
+        Score = 0.50×CNN + 0.30×ELA + 0.20×SIFT
+      </div>
+    </div>
+
+    <div class="about-card">
+      <h2><i class="fa fa-book"></i> References</h2>
+      <ul class="ref-list">
+        <li>Farid, H. (2009). <em>Image Forgery Detection.</em> IEEE Signal Processing Magazine.</li>
+        <li>Lowe, D.G. (2004). <em>Distinctive Image Features from Scale-Invariant Keypoints.</em> IJCV.</li>
+        <li>Bayar, B. & Stamm, M. (2016). <em>A Deep Learning Approach to Universal Image Manipulation Detection.</em></li>
+        <li>Fridrich, J. et al. (2003). <em>Detection of Copy-Move Forgery in Digital Images.</em></li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  <p>Image Forgery Detection System &nbsp;|&nbsp; ELA + SIFT + CNN</p>
+  <p>IPCV Final Year Project &nbsp;|&nbsp; 2025–2026</p>
+</footer>
+
+</body>
+</html>

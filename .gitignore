@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Flask
+instance/
+.webassets-cache
+
+# Uploads (temporary files)
+static/uploads/*
+!static/uploads/.gitkeep
+
+# CNN Model (large file)
+models/*.keras
+models/*.h5
+
+# Dataset (add your own)
+dataset/real/*
+dataset/fake/*
+!dataset/real/.gitkeep
+!dataset/fake/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+*.env

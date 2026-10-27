@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Image Forgery Detection | ELA + SIFT + CNN</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════ NAVBAR ═══════════════════ -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span>ForgeryDetect</span>
+  </div>
+  <div class="nav-links">
+    <a href="/" class="active"><i class="fa fa-home"></i> Home</a>
+    <a href="/about"><i class="fa fa-info-circle"></i> About</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section class="hero">
+  <div class="hero-content">
+    <h1>🔍 Image Forgery Detector</h1>
+    <p>Detect photo manipulation using <strong>ELA</strong>, <strong>SIFT</strong> and <strong>CNN</strong></p>
+    <div class="tech-badges">
+      <span class="badge ela-badge"><i class="fa fa-layer-group"></i> ELA</span>
+      <span class="badge sift-badge"><i class="fa fa-vector-square"></i> SIFT</span>
+      <span class="badge cnn-badge"><i class="fa fa-brain"></i> CNN</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ UPLOAD SECTION ═══════════════════ -->
+<section class="upload-section">
+  <div class="card upload-card">
+    <h2><i class="fa fa-upload"></i> Upload an Image</h2>
+    <p class="subtitle">Supports JPG, PNG, BMP, TIFF — Max 16 MB</p>
+
+    <div class="drop-zone" id="dropZone">
+      <i class="fa fa-image drop-icon"></i>
+      <p>Drag & Drop your image here</p>
+      <p class="or-text">— or —</p>
+      <label class="btn btn-primary" for="fileInput">
+        <i class="fa fa-folder-open"></i> Choose File
+      </label>
+      <input type="file" id="fileInput" accept="image/*" hidden/>
+    </div>
+
+    <!-- Preview -->
+    <div id="previewContainer" class="preview-container hidden">
+      <img id="previewImg" src="" alt="Preview"/>
+      <div class="preview-info">
+        <span id="previewName">filename.jpg</span>
+        <button class="btn btn-sm btn-danger" id="clearBtn">
+          <i class="fa fa-times"></i> Clear
+        </button>
+      </div>
+    </div>
+
+    <button class="btn btn-analyze" id="analyzeBtn" disabled>
+      <i class="fa fa-search"></i> Analyze Image
+    </button>
+  </div>
+</section>
+
+<!-- ═══════════════════ LOADING ═══════════════════ -->
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="loader-box">
+    <div class="spinner"></div>
+    <p id="loadingText">Running ELA Analysis...</p>
+    <div class="loading-steps">
+      <span id="step1" class="step pending">① ELA</span>
+      <span id="step2" class="step pending">② SIFT</span>
+      <span id="step3" class="step pending">③ CNN</span>
+      <span id="step4" class="step pending">④ Localization</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ RESULTS ═══════════════════ -->
+<section id="resultsSection" class="results-section hidden">
+
+  <!-- ── Verdict Banner ── -->
+  <div id="verdictBanner" class="verdict-banner">
+    <div class="verdict-icon" id="verdictIcon"></div>
+    <div class="verdict-text">
+      <h2 id="verdictLabel">FAKE</h2>
+      <p id="verdictSub">Confidence: <strong id="confidenceVal">87.3%</strong></p>
+    </div>
+    <div class="score-circle" id="scoreCircle">
+      <svg viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" class="bg-circle"/>
+        <circle cx="50" cy="50" r="40" class="score-arc" id="scoreArc"
+                stroke-dasharray="0 251.2"/>
+      </svg>
+      <span id="scoreText">0%</span>
+    </div>
+  </div>
+
+  <!-- ── Score Breakdown ── -->
+  <div class="scores-grid">
+    <div class="score-card ela-card">
+      <div class="score-header">
+        <i class="fa fa-layer-group"></i>
+        <span>ELA Score</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill ela-fill" id="elaBar"></div>
+      </div>
+      <span class="score-val" id="elaScore">--%</span>
+      <p class="score-desc">Error Level Analysis — detects compression anomalies</p>
+    </div>
+
+    <div class="score-card sift-card">
+      <div class="score-header">
+        <i class="fa fa-vector-square"></i>
+        <span>SIFT Score</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill sift-fill" id="siftBar"></div>
+      </div>
+      <span class="score-val" id="siftScore">--%</span>
+      <p class="score-desc">Copy-Move Detection — <span id="matchCount">0</span> feature matches found</p>
+    </div>
+
+    <div class="score-card cnn-card">
+      <div class="score-header">
+        <i class="fa fa-brain"></i>
+        <span>CNN Score</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill cnn-fill" id="cnnBar"></div>
+      </div>
+      <span class="score-val" id="cnnScore">--%</span>
+      <p class="score-desc" id="cnnDesc">Deep learning classification</p>
+    </div>
+  </div>
+
+  <!-- ── Image Results Grid ── -->
+  <div class="images-grid">
+    <div class="img-card">
+      <h3><i class="fa fa-image"></i> Original Image</h3>
+      <img id="originalImg" src="" alt="Original"/>
+    </div>
+
+    <div class="img-card">
+      <h3><i class="fa fa-fire"></i> ELA Heatmap</h3>
+      <img id="elaImg" src="" alt="ELA Result"/>
+      <p class="img-note">Brighter areas = higher error level = more suspicious</p>
+    </div>
+
+    <div class="img-card">
+      <h3><i class="fa fa-crosshairs"></i> SIFT Copy-Move</h3>
+      <img id="siftImg" src="" alt="SIFT Matches"/>
+      <p class="img-note">Green/Red circles = matched keypoints (copy-paste regions)</p>
+    </div>
+
+    <div class="img-card full-width">
+      <h3><i class="fa fa-map-marked-alt"></i> Forgery Localization (ELA Overlay)</h3>
+      <img id="heatmapImg" src="" alt="Forgery Heatmap"/>
+      <p class="img-note">Red border = FAKE detected | Green border = REAL</p>
+    </div>
+  </div>
+
+  <!-- ── Action Buttons ── -->
+  <div class="result-actions">
+    <button class="btn btn-primary" id="downloadBtn">
+      <i class="fa fa-download"></i> Download Result
+    </button>
+    <button class="btn btn-outline" id="analyzeAnotherBtn">
+      <i class="fa fa-redo"></i> Analyze Another
+    </button>
+  </div>
+</section>
+
+<!-- ═══════════════════ HOW IT WORKS ═══════════════════ -->
+<section class="how-it-works">
+  <h2>⚙️ How It Works</h2>
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <i class="fa fa-layer-group step-icon ela-icon"></i>
+      <h3>ELA Analysis</h3>
+      <p>Re-saves the image at known quality and detects regions with inconsistent compression — a key sign of editing.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <i class="fa fa-vector-square step-icon sift-icon"></i>
+      <h3>SIFT Detection</h3>
+      <p>Finds copy-paste forgery by matching feature keypoints within the same image using Scale-Invariant Feature Transform.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <i class="fa fa-brain step-icon cnn-icon"></i>
+      <h3>CNN Classification</h3>
+      <p>A deep convolutional neural network trained on ELA images makes the final REAL/FAKE classification decision.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <i class="fa fa-map-marked-alt step-icon loc-icon"></i>
+      <h3>Forgery Localization</h3>
+      <p>The system highlights exactly WHERE the tampered region is using a color heatmap overlay on the original image.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer class="footer">
+  <p>Image Forgery Detection System &nbsp;|&nbsp; ELA + SIFT + CNN</p>
+  <p>IPCV Final Year Project &nbsp;|&nbsp; 2025–2026</p>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
