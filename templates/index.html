@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Image Forgery Detection | ELA + SIFT + CNN</title>
+  <title>Image Forgery Detection | Premium | ELA + SIFT + CNN</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
@@ -13,7 +13,7 @@
 <nav class="navbar">
   <div class="nav-brand">
     <i class="fa-solid fa-magnifying-glass"></i>
-    <span>ForgeryDetect</span>
+    <span>ForgeryDetect <span class="premium-tag">PRO</span></span>
   </div>
   <div class="nav-links">
     <a href="/" class="active"><i class="fa fa-home"></i> Home</a>
@@ -25,11 +25,15 @@
 <section class="hero">
   <div class="hero-content">
     <h1>🔍 Image Forgery Detector</h1>
-    <p>Detect photo manipulation using <strong>ELA</strong>, <strong>SIFT</strong> and <strong>CNN</strong></p>
+    <p>Advanced forensic analysis using <strong>7 detection techniques</strong></p>
     <div class="tech-badges">
       <span class="badge ela-badge"><i class="fa fa-layer-group"></i> ELA</span>
       <span class="badge sift-badge"><i class="fa fa-vector-square"></i> SIFT</span>
       <span class="badge cnn-badge"><i class="fa fa-brain"></i> CNN</span>
+      <span class="badge meta-badge"><i class="fa fa-tags"></i> EXIF</span>
+      <span class="badge noise-badge"><i class="fa fa-wave-square"></i> Noise</span>
+      <span class="badge ghost-badge"><i class="fa fa-ghost"></i> Ghost</span>
+      <span class="badge freq-badge"><i class="fa fa-chart-line"></i> FFT</span>
     </div>
   </div>
 </section>
@@ -47,10 +51,9 @@
       <label class="btn btn-primary" for="fileInput">
         <i class="fa fa-folder-open"></i> Choose File
       </label>
-      <input type="file" id="fileInput" accept="image/*" hidden/>
+      <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.bmp,.tiff" hidden/>
     </div>
 
-    <!-- Preview -->
     <div id="previewContainer" class="preview-container hidden">
       <img id="previewImg" src="" alt="Preview"/>
       <div class="preview-info">
@@ -62,7 +65,7 @@
     </div>
 
     <button class="btn btn-analyze" id="analyzeBtn" disabled>
-      <i class="fa fa-search"></i> Analyze Image
+      <i class="fa fa-search"></i> Run Full Forensic Analysis (7 Techniques)
     </button>
   </div>
 </section>
@@ -71,12 +74,15 @@
 <div id="loadingOverlay" class="loading-overlay hidden">
   <div class="loader-box">
     <div class="spinner"></div>
-    <p id="loadingText">Running ELA Analysis...</p>
+    <p id="loadingText">Initializing analysis...</p>
     <div class="loading-steps">
       <span id="step1" class="step pending">① ELA</span>
       <span id="step2" class="step pending">② SIFT</span>
       <span id="step3" class="step pending">③ CNN</span>
-      <span id="step4" class="step pending">④ Localization</span>
+      <span id="step4" class="step pending">④ EXIF</span>
+      <span id="step5" class="step pending">⑤ Noise</span>
+      <span id="step6" class="step pending">⑥ Ghost</span>
+      <span id="step7" class="step pending">⑦ FFT</span>
     </div>
   </div>
 </div>
@@ -90,6 +96,7 @@
     <div class="verdict-text">
       <h2 id="verdictLabel">FAKE</h2>
       <p id="verdictSub">Confidence: <strong id="confidenceVal">87.3%</strong></p>
+      <span class="risk-badge" id="riskBadge">HIGH RISK</span>
     </div>
     <div class="score-circle" id="scoreCircle">
       <svg viewBox="0 0 100 100">
@@ -101,68 +108,109 @@
     </div>
   </div>
 
-  <!-- ── Score Breakdown ── -->
-  <div class="scores-grid">
+  <!-- ── Flags / Warnings ── -->
+  <div id="flagsContainer" class="flags-container hidden">
+    <h3><i class="fa fa-exclamation-triangle"></i> Forensic Findings</h3>
+    <ul id="flagsList" class="flags-list"></ul>
+  </div>
+
+  <!-- ── Score Breakdown — 7 Techniques ── -->
+  <h3 class="section-title">📊 Analysis Breakdown — 7 Techniques</h3>
+  <div class="scores-grid-7">
+
     <div class="score-card ela-card">
-      <div class="score-header">
-        <i class="fa fa-layer-group"></i>
-        <span>ELA Score</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill ela-fill" id="elaBar"></div>
-      </div>
+      <div class="score-header"><i class="fa fa-layer-group"></i><span>ELA</span></div>
+      <div class="progress-bar"><div class="progress-fill ela-fill" id="elaBar"></div></div>
       <span class="score-val" id="elaScore">--%</span>
-      <p class="score-desc">Error Level Analysis — detects compression anomalies</p>
+      <p class="score-desc">Compression error analysis</p>
     </div>
 
     <div class="score-card sift-card">
-      <div class="score-header">
-        <i class="fa fa-vector-square"></i>
-        <span>SIFT Score</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill sift-fill" id="siftBar"></div>
-      </div>
+      <div class="score-header"><i class="fa fa-vector-square"></i><span>SIFT</span></div>
+      <div class="progress-bar"><div class="progress-fill sift-fill" id="siftBar"></div></div>
       <span class="score-val" id="siftScore">--%</span>
-      <p class="score-desc">Copy-Move Detection — <span id="matchCount">0</span> feature matches found</p>
+      <p class="score-desc">Copy-move: <span id="matchCount">0</span> matches</p>
     </div>
 
     <div class="score-card cnn-card">
-      <div class="score-header">
-        <i class="fa fa-brain"></i>
-        <span>CNN Score</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill cnn-fill" id="cnnBar"></div>
-      </div>
+      <div class="score-header"><i class="fa fa-brain"></i><span>CNN</span></div>
+      <div class="progress-bar"><div class="progress-fill cnn-fill" id="cnnBar"></div></div>
       <span class="score-val" id="cnnScore">--%</span>
-      <p class="score-desc" id="cnnDesc">Deep learning classification</p>
+      <p class="score-desc" id="cnnDesc">Deep learning</p>
     </div>
+
+    <div class="score-card meta-card">
+      <div class="score-header"><i class="fa fa-tags"></i><span>EXIF Metadata</span></div>
+      <div class="progress-bar"><div class="progress-fill meta-fill" id="metaBar"></div></div>
+      <span class="score-val" id="metaScore">--%</span>
+      <p class="score-desc" id="metaDesc">Camera & software info</p>
+    </div>
+
+    <div class="score-card noise-card">
+      <div class="score-header"><i class="fa fa-wave-square"></i><span>Noise Pattern</span></div>
+      <div class="progress-bar"><div class="progress-fill noise-fill" id="noiseBar"></div></div>
+      <span class="score-val" id="noiseScore">--%</span>
+      <p class="score-desc" id="noiseDesc">Sensor noise inconsistency</p>
+    </div>
+
+    <div class="score-card ghost-card">
+      <div class="score-header"><i class="fa fa-ghost"></i><span>JPEG Ghost</span></div>
+      <div class="progress-bar"><div class="progress-fill ghost-fill" id="ghostBar"></div></div>
+      <span class="score-val" id="ghostScore">--%</span>
+      <p class="score-desc" id="ghostDesc">Double compression detection</p>
+    </div>
+
+    <div class="score-card freq-card">
+      <div class="score-header"><i class="fa fa-chart-line"></i><span>FFT / AI Check</span></div>
+      <div class="progress-bar"><div class="progress-fill freq-fill" id="freqBar"></div></div>
+      <span class="score-val" id="freqScore">--%</span>
+      <p class="score-desc">Frequency domain analysis</p>
+    </div>
+
+  </div>
+
+  <!-- ── Metadata Info Card ── -->
+  <div class="meta-info-card" id="metaInfoCard">
+    <h3><i class="fa fa-tags"></i> EXIF Metadata Report</h3>
+    <div class="meta-grid" id="metaGrid"></div>
   </div>
 
   <!-- ── Image Results Grid ── -->
+  <h3 class="section-title">🖼️ Visual Analysis Results</h3>
   <div class="images-grid">
     <div class="img-card">
       <h3><i class="fa fa-image"></i> Original Image</h3>
       <img id="originalImg" src="" alt="Original"/>
     </div>
-
     <div class="img-card">
       <h3><i class="fa fa-fire"></i> ELA Heatmap</h3>
-      <img id="elaImg" src="" alt="ELA Result"/>
-      <p class="img-note">Brighter areas = higher error level = more suspicious</p>
+      <img id="elaImg" src="" alt="ELA"/>
+      <p class="img-note">Bright = high error = suspicious region</p>
     </div>
-
     <div class="img-card">
       <h3><i class="fa fa-crosshairs"></i> SIFT Copy-Move</h3>
-      <img id="siftImg" src="" alt="SIFT Matches"/>
-      <p class="img-note">Green/Red circles = matched keypoints (copy-paste regions)</p>
+      <img id="siftImg" src="" alt="SIFT"/>
+      <p class="img-note">Circles = copy-paste matches found</p>
     </div>
-
+    <div class="img-card">
+      <h3><i class="fa fa-wave-square"></i> Noise Map</h3>
+      <img id="noiseImg" src="" alt="Noise"/>
+      <p class="img-note">Red boxes = noise inconsistency regions</p>
+    </div>
+    <div class="img-card">
+      <h3><i class="fa fa-ghost"></i> JPEG Ghost Map</h3>
+      <img id="ghostImg" src="" alt="Ghost"/>
+      <p class="img-note">Cyan = double-compressed (spliced) regions</p>
+    </div>
+    <div class="img-card">
+      <h3><i class="fa fa-chart-line"></i> FFT Spectrum</h3>
+      <img id="freqImg" src="" alt="FFT"/>
+      <p class="img-note">Grid patterns = AI/GAN artifacts</p>
+    </div>
     <div class="img-card full-width">
-      <h3><i class="fa fa-map-marked-alt"></i> Forgery Localization (ELA Overlay)</h3>
-      <img id="heatmapImg" src="" alt="Forgery Heatmap"/>
-      <p class="img-note">Red border = FAKE detected | Green border = REAL</p>
+      <h3><i class="fa fa-map-marked-alt"></i> Forgery Localization Overlay</h3>
+      <img id="heatmapImg" src="" alt="Heatmap"/>
+      <p class="img-note">🔴 Red border = FAKE &nbsp;|&nbsp; 🟢 Green border = REAL</p>
     </div>
   </div>
 
@@ -179,38 +227,34 @@
 
 <!-- ═══════════════════ HOW IT WORKS ═══════════════════ -->
 <section class="how-it-works">
-  <h2>⚙️ How It Works</h2>
+  <h2>⚙️ 7 Forensic Techniques Explained</h2>
   <div class="steps-grid">
-    <div class="step-card">
-      <div class="step-num">1</div>
-      <i class="fa fa-layer-group step-icon ela-icon"></i>
-      <h3>ELA Analysis</h3>
-      <p>Re-saves the image at known quality and detects regions with inconsistent compression — a key sign of editing.</p>
-    </div>
-    <div class="step-card">
-      <div class="step-num">2</div>
-      <i class="fa fa-vector-square step-icon sift-icon"></i>
-      <h3>SIFT Detection</h3>
-      <p>Finds copy-paste forgery by matching feature keypoints within the same image using Scale-Invariant Feature Transform.</p>
-    </div>
-    <div class="step-card">
-      <div class="step-num">3</div>
-      <i class="fa fa-brain step-icon cnn-icon"></i>
-      <h3>CNN Classification</h3>
-      <p>A deep convolutional neural network trained on ELA images makes the final REAL/FAKE classification decision.</p>
-    </div>
-    <div class="step-card">
-      <div class="step-num">4</div>
-      <i class="fa fa-map-marked-alt step-icon loc-icon"></i>
-      <h3>Forgery Localization</h3>
-      <p>The system highlights exactly WHERE the tampered region is using a color heatmap overlay on the original image.</p>
-    </div>
+    <div class="step-card"><div class="step-num">1</div>
+      <i class="fa fa-layer-group step-icon ela-icon"></i><h3>ELA</h3>
+      <p>Detects JPEG compression inconsistencies in tampered regions.</p></div>
+    <div class="step-card"><div class="step-num">2</div>
+      <i class="fa fa-vector-square step-icon sift-icon"></i><h3>SIFT</h3>
+      <p>Finds copy-paste forgery using keypoint feature matching.</p></div>
+    <div class="step-card"><div class="step-num">3</div>
+      <i class="fa fa-brain step-icon cnn-icon"></i><h3>CNN</h3>
+      <p>Deep learning model trained on real vs fake ELA images.</p></div>
+    <div class="step-card"><div class="step-num">4</div>
+      <i class="fa fa-tags step-icon meta-icon"></i><h3>EXIF</h3>
+      <p>Checks metadata for editing software, timestamp anomalies, missing camera data.</p></div>
+    <div class="step-card"><div class="step-num">5</div>
+      <i class="fa fa-wave-square step-icon noise-icon"></i><h3>Noise</h3>
+      <p>Analyzes camera sensor noise patterns — inconsistency reveals splicing.</p></div>
+    <div class="step-card"><div class="step-num">6</div>
+      <i class="fa fa-ghost step-icon ghost-icon"></i><h3>JPEG Ghost</h3>
+      <p>Detects double-compressed regions — a signature of image splicing.</p></div>
+    <div class="step-card"><div class="step-num">7</div>
+      <i class="fa fa-chart-line step-icon freq-icon"></i><h3>FFT / AI</h3>
+      <p>Frequency domain analysis detects AI-generated/GAN images and DCT artifacts.</p></div>
   </div>
 </section>
 
-<!-- ═══════════════════ FOOTER ═══════════════════ -->
 <footer class="footer">
-  <p>Image Forgery Detection System &nbsp;|&nbsp; ELA + SIFT + CNN</p>
+  <p>Image Forgery Detection System — Premium Edition &nbsp;|&nbsp; 7 Forensic Techniques</p>
   <p>IPCV Final Year Project &nbsp;|&nbsp; 2025–2026</p>
 </footer>
 

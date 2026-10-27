@@ -1,9 +1,8 @@
 /* ═══════════════════════════════════════════════
    Image Forgery Detection — Frontend JavaScript
-   Handles: Upload, Drag & Drop, Analysis, Results
+   Handles: 7-Technique Analysis, EXIF, Visuals
 ═══════════════════════════════════════════════ */
 
-// ── DOM refs ─────────────────────────────────────
 const dropZone        = document.getElementById('dropZone');
 const fileInput       = document.getElementById('fileInput');
 const previewContainer= document.getElementById('previewContainer');
@@ -17,7 +16,7 @@ const resultsSection  = document.getElementById('resultsSection');
 
 let selectedFile = null;
 
-// ── Drag & Drop ──────────────────────────────────
+// Drag & drop
 dropZone.addEventListener('dragover', e => {
   e.preventDefault();
   dropZone.classList.add('drag-over');
@@ -34,10 +33,13 @@ fileInput.addEventListener('change', () => {
   if (fileInput.files[0]) setFile(fileInput.files[0]);
 });
 
-// ── File Selection ───────────────────────────────
 function setFile(file) {
-  if (!file.type.startsWith('image/')) {
-    alert('Please upload a valid image file.');
+  const allowed = ['image/jpeg', 'image/png', 'image/bmp', 'image/tiff'];
+  const name = file.name.toLowerCase();
+  const validExt = name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png') || name.endsWith('.bmp') || name.endsWith('.tiff');
+  
+  if (!validExt && !allowed.includes(file.type)) {
+    alert('Please upload a valid image file (JPG, PNG, BMP, TIFF).');
     return;
   }
   selectedFile = file;
@@ -61,61 +63,66 @@ document.getElementById('analyzeAnotherBtn')?.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-// ── Animated Loading Steps ───────────────────────
-const loadingMessages = [
-  'Running ELA Analysis...',
-  'Detecting Copy-Move with SIFT...',
-  'Running CNN Classification...',
-  'Generating Forgery Heatmap...'
+// Loading steps
+const stepsData = [
+  { id: 'step1', msg: '① Running Error Level Analysis (ELA)...' },
+  { id: 'step2', msg: '② SIFT keypoint matching (Copy-Move)...' },
+  { id: 'step3', msg: '③ Checking CNN classification model...' },
+  { id: 'step4', msg: '④ Extracting & inspecting EXIF metadata...' },
+  { id: 'step5', msg: '⑤ Sensor noise & blur variation analysis...' },
+  { id: 'step6', msg: '⑥ Detecting JPEG ghost & double-compression...' },
+  { id: 'step7', msg: '⑦ 2D-FFT frequency domain artifact analysis...' }
 ];
-const stepIds = ['step1','step2','step3','step4'];
 let stepTimers = [];
 
-function startLoadingAnimation() {
+function startLoading() {
   stepTimers = [];
-  stepIds.forEach(id => {
-    const el = document.getElementById(id);
-    el.className = 'step pending';
+  stepsData.forEach(s => {
+    const el = document.getElementById(s.id);
+    if (el) el.className = 'step pending';
   });
-  loadingText.textContent = loadingMessages[0];
 
-  loadingMessages.forEach((msg, i) => {
+  stepsData.forEach((s, idx) => {
     const t = setTimeout(() => {
-      if (i > 0) document.getElementById(stepIds[i-1]).className = 'step done';
-      document.getElementById(stepIds[i]).className = 'step active';
-      loadingText.textContent = msg;
-    }, i * 1400);
+      if (idx > 0) {
+        const prev = document.getElementById(stepsData[idx - 1].id);
+        if (prev) prev.className = 'step done';
+      }
+      const curr = document.getElementById(s.id);
+      if (curr) curr.className = 'step active';
+      loadingText.textContent = s.msg;
+    }, idx * 600);
     stepTimers.push(t);
   });
 }
 
-function stopLoadingAnimation() {
+function stopLoading() {
   stepTimers.forEach(clearTimeout);
-  stepIds.forEach(id => {
-    document.getElementById(id).className = 'step done';
+  stepsData.forEach(s => {
+    const el = document.getElementById(s.id);
+    if (el) el.className = 'step done';
   });
 }
 
-// ── Analyze ──────────────────────────────────────
+// Analyze button
 analyzeBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
 
-  // Show loader
   loadingOverlay.classList.remove('hidden');
   resultsSection.classList.add('hidden');
-  startLoadingAnimation();
+  startLoading();
 
   const formData = new FormData();
   formData.append('image', selectedFile);
 
   try {
-    const response = await fetch('/analyze', {
+    const res = await fetch('/analyze', {
       method: 'POST',
       body: formData
     });
-    const data = await response.json();
+    const data = await res.json();
 
-    stopLoadingAnimation();
+    stopLoading();
     loadingOverlay.classList.add('hidden');
 
     if (data.error) {
@@ -124,87 +131,126 @@ analyzeBtn.addEventListener('click', async () => {
     }
 
     renderResults(data);
-
   } catch (err) {
-    stopLoadingAnimation();
+    stopLoading();
     loadingOverlay.classList.add('hidden');
-    alert('Network error: ' + err.message);
+    alert('Analysis failed: ' + err.message);
   }
 });
 
-// ── Render Results ───────────────────────────────
 function renderResults(data) {
-  // ── Verdict Banner ──
+  // Verdict banner
   const banner = document.getElementById('verdictBanner');
   banner.className = 'verdict-banner ' + (data.is_fake ? 'fake' : 'real');
 
   document.getElementById('verdictIcon').textContent = data.is_fake ? '🔴' : '🟢';
   document.getElementById('verdictLabel').textContent = data.verdict;
-  document.getElementById('verdictSub').innerHTML =
-    `Confidence: <strong>${data.confidence}%</strong>`;
+  document.getElementById('confidenceVal').textContent = data.confidence + '%';
+
+  // Risk badge
+  const riskBadge = document.getElementById('riskBadge');
+  if (data.risk) {
+    riskBadge.textContent = `${data.risk.level} RISK — ${data.risk.label}`;
+    riskBadge.style.backgroundColor = data.risk.color;
+    riskBadge.style.color = '#fff';
+  }
 
   // Score arc animation
   animateScoreArc(data.final_score * 100);
   document.getElementById('scoreText').textContent = data.confidence + '%';
 
-  // ── ELA ──
-  document.getElementById('elaScore').textContent = data.ela.percent + '%';
-  animateBar('elaBar', data.ela.percent);
-  document.getElementById('elaImg').src = data.ela.image;
-
-  // ── SIFT ──
-  document.getElementById('siftScore').textContent = data.sift.percent + '%';
-  animateBar('siftBar', data.sift.percent);
-  document.getElementById('matchCount').textContent = data.sift.match_count;
-  document.getElementById('siftImg').src = data.sift.image;
-
-  // ── CNN ──
-  if (data.cnn.available && data.cnn.score !== null) {
-    document.getElementById('cnnScore').textContent = data.cnn.percent + '%';
-    animateBar('cnnBar', data.cnn.percent);
-    document.getElementById('cnnDesc').textContent =
-      data.cnn.is_trained
-        ? 'Trained CNN classification'
-        : '⚠️ CNN not yet trained — score may be inaccurate';
+  // Findings list
+  const flagsContainer = document.getElementById('flagsContainer');
+  const flagsList = document.getElementById('flagsList');
+  flagsList.innerHTML = '';
+  if (data.all_flags && data.all_flags.length > 0) {
+    flagsContainer.classList.remove('hidden');
+    data.all_flags.forEach(f => {
+      const li = document.createElement('li');
+      li.textContent = f;
+      flagsList.appendChild(li);
+    });
   } else {
-    document.getElementById('cnnScore').textContent = 'N/A';
-    document.getElementById('cnnDesc').textContent = 'TensorFlow not installed — install to enable CNN';
+    flagsContainer.classList.add('hidden');
   }
 
-  // ── Images ──
-  document.getElementById('originalImg').src  = data.images.original;
-  document.getElementById('heatmapImg').src   = data.images.heatmap;
+  // 7 Scores
+  animateBar('elaBar', data.ela.percent);
+  document.getElementById('elaScore').textContent = data.ela.percent + '%';
 
-  // ── Show results ──
+  animateBar('siftBar', data.sift.percent);
+  document.getElementById('siftScore').textContent = data.sift.percent + '%';
+  document.getElementById('matchCount').textContent = data.sift.match_count;
+
+  if (data.cnn && data.cnn.available && data.cnn.score !== null) {
+    animateBar('cnnBar', data.cnn.percent);
+    document.getElementById('cnnScore').textContent = data.cnn.percent + '%';
+    document.getElementById('cnnDesc').textContent = data.cnn.is_trained ? 'Trained model' : 'Untrained baseline';
+  } else {
+    document.getElementById('cnnScore').textContent = 'N/A';
+    document.getElementById('cnnDesc').textContent = 'TensorFlow optional';
+  }
+
+  animateBar('metaBar', data.metadata.percent);
+  document.getElementById('metaScore').textContent = data.metadata.percent + '%';
+
+  animateBar('noiseBar', data.noise.percent);
+  document.getElementById('noiseScore').textContent = data.noise.percent + '%';
+
+  animateBar('ghostBar', data.ghost.percent);
+  document.getElementById('ghostScore').textContent = data.ghost.percent + '%';
+
+  animateBar('freqBar', data.frequency.percent);
+  document.getElementById('freqScore').textContent = data.frequency.percent + '%';
+
+  // EXIF Metadata details
+  const metaGrid = document.getElementById('metaGrid');
+  metaGrid.innerHTML = `
+    <div class="meta-item"><div class="meta-label">Camera</div><div class="meta-val">${data.metadata.camera || 'None detected'}</div></div>
+    <div class="meta-item"><div class="meta-label">Software</div><div class="meta-val">${data.metadata.software || 'None / Cleared'}</div></div>
+    <div class="meta-item"><div class="meta-label">Timestamp</div><div class="meta-val">${data.metadata.datetime || 'Unavailable'}</div></div>
+    <div class="meta-item"><div class="meta-label">GPS Geotag</div><div class="meta-val">${data.metadata.gps ? 'Present' : 'Not attached'}</div></div>
+  `;
+
+  // Images
+  document.getElementById('originalImg').src = data.images.original;
+  document.getElementById('elaImg').src      = data.ela.image;
+  document.getElementById('siftImg').src     = data.sift.image;
+  document.getElementById('noiseImg').src    = data.noise.noise_map;
+  document.getElementById('ghostImg').src    = data.ghost.image;
+  document.getElementById('freqImg').src     = data.frequency.image;
+  document.getElementById('heatmapImg').src  = data.images.heatmap;
+
+  // Show section
   resultsSection.classList.remove('hidden');
 
-  // ── Download button ──
+  // Download
   document.getElementById('downloadBtn').onclick = () => {
-    const link = document.createElement('a');
-    link.href = data.images.heatmap;
-    link.download = 'forgery_result.png';
-    link.click();
+    const a = document.createElement('a');
+    a.href = data.images.heatmap;
+    a.download = 'forensic_report_heatmap.png';
+    a.click();
   };
 
-  // Scroll to results
   setTimeout(() => {
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
 }
 
-// ── Animations ───────────────────────────────────
-function animateBar(elementId, percent) {
-  const el = document.getElementById(elementId);
+function animateBar(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
   el.style.width = '0%';
-  setTimeout(() => { el.style.width = percent + '%'; }, 50);
+  setTimeout(() => { el.style.width = Math.min(val, 100) + '%'; }, 80);
 }
 
 function animateScoreArc(percent) {
   const arc = document.getElementById('scoreArc');
-  const circumference = 2 * Math.PI * 40; // r=40
-  const offset = circumference * (percent / 100);
-  arc.style.strokeDasharray = `0 ${circumference}`;
+  if (!arc) return;
+  const circum = 2 * Math.PI * 40;
+  const offset = circum * (Math.min(percent, 100) / 100);
+  arc.style.strokeDasharray = `0 ${circum}`;
   setTimeout(() => {
-    arc.style.strokeDasharray = `${offset} ${circumference}`;
+    arc.style.strokeDasharray = `${offset} ${circum}`;
   }, 100);
 }
