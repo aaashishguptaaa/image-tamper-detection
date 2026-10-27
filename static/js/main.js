@@ -159,6 +159,29 @@ function renderResults(data) {
   animateScoreArc(data.final_score * 100);
   document.getElementById('scoreText').textContent = data.confidence + '%';
 
+  // ── AI Explanation Rendering ──
+  if (data.ai_explanation) {
+    document.getElementById('aiSummaryText').textContent = data.ai_explanation.summary || 'Summary unavailable.';
+    document.getElementById('aiAdviceText').textContent = data.ai_explanation.advice || '';
+
+    const list = document.getElementById('aiBreakdownList');
+    list.innerHTML = '';
+    if (data.ai_explanation.breakdown && data.ai_explanation.breakdown.length > 0) {
+      data.ai_explanation.breakdown.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'ai-item-row';
+        row.innerHTML = `
+          <div class="ai-item-head">
+            <span class="ai-item-title"><i class="fa fa-chevron-right" style="font-size:0.7rem;color:var(--accent);"></i> ${item.tech}</span>
+            <span class="ai-badge ai-badge-${item.badge_type}">${item.badge}</span>
+          </div>
+          <p class="ai-item-desc">${item.detail}</p>
+        `;
+        list.appendChild(row);
+      });
+    }
+  }
+
   // Findings list
   const flagsContainer = document.getElementById('flagsContainer');
   const flagsList = document.getElementById('flagsList');

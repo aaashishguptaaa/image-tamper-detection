@@ -29,6 +29,7 @@ from techniques.frequency import analyze_frequency_domain
 from utils.visualization import (generate_forgery_heatmap, ndarray_to_base64,
                                   image_path_to_base64, add_forgery_border,
                                   create_side_by_side)
+from utils.ai_explainer import generate_ai_explanation
 
 # ── Optional CNN ───────────────────────────────────────────────────
 try:
@@ -253,14 +254,26 @@ def analyze():
         all_flags = (meta_result["flags"] +
                      freq_result["flags"])
 
-        # ── Build response ────────────────────────────────────────
-        response = {
+        # ── Pre-build dictionary for AI explanation ────────────────
+        partial_data = {
             "verdict":     "FAKE" if is_fake else "REAL",
             "is_fake":     is_fake,
             "final_score": final_score,
             "confidence":  round(final_score * 100, 1),
-            "risk":        risk,
             "all_flags":   all_flags,
+            **results
+        }
+        ai_explanation = generate_ai_explanation(partial_data)
+
+        # ── Build response ────────────────────────────────────────
+        response = {
+            "verdict":        "FAKE" if is_fake else "REAL",
+            "is_fake":        is_fake,
+            "final_score":    final_score,
+            "confidence":     round(final_score * 100, 1),
+            "risk":           risk,
+            "all_flags":      all_flags,
+            "ai_explanation": ai_explanation,
 
             **results,
 
