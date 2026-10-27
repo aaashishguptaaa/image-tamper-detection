@@ -159,28 +159,9 @@ function renderResults(data) {
   animateScoreArc(data.final_score * 100);
   document.getElementById('scoreText').textContent = data.confidence + '%';
 
-  // ── AI Explanation Rendering ──
-  if (data.ai_explanation) {
-    document.getElementById('aiSummaryText').textContent = data.ai_explanation.summary || 'Summary unavailable.';
-    document.getElementById('aiAdviceText').textContent = data.ai_explanation.advice || '';
-
-    const list = document.getElementById('aiBreakdownList');
-    list.innerHTML = '';
-    if (data.ai_explanation.breakdown && data.ai_explanation.breakdown.length > 0) {
-      data.ai_explanation.breakdown.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'ai-item-row';
-        row.innerHTML = `
-          <div class="ai-item-head">
-            <span class="ai-item-title"><i class="fa fa-chevron-right" style="font-size:0.7rem;color:var(--accent);"></i> ${item.tech}</span>
-            <span class="ai-badge ai-badge-${item.badge_type}">${item.badge}</span>
-          </div>
-          <p class="ai-item-desc">${item.detail}</p>
-        `;
-        list.appendChild(row);
-      });
-    }
-  }
+  // ── Store active analysis data for interactive card clicks ──
+  window.lastAnalysisData = data;
+  setupClickableFeatureCards(data);
 
   // Findings list
   const flagsContainer = document.getElementById('flagsContainer');
@@ -258,6 +239,136 @@ function renderResults(data) {
   setTimeout(() => {
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
+}
+
+function setupClickableFeatureCards(data) {
+  const cards = document.querySelectorAll('.clickable-card');
+  const panel = document.getElementById('techDetailPanel');
+  const panelTitle = document.getElementById('panelTitle');
+  const panelIcon = document.getElementById('panelIcon');
+  const panelBadge = document.getElementById('panelBadge');
+  const panelScoreVal = document.getElementById('panelScoreVal');
+  const panelExplanation = document.getElementById('panelExplanation');
+  const closeBtn = document.getElementById('closeDetailPanel');
+
+  closeBtn.onclick = () => {
+    panel.classList.add('hidden');
+    cards.forEach(c => c.classList.remove('active-card'));
+  };
+
+  const explanationsMap = {
+    ela: () => {
+      const pct = data.ela.percent;
+      const isHigh = pct > 40;
+      return {
+        title: "Error Level Analysis (ELA)",
+        icon: "fa-layer-group",
+        badge: isHigh ? "Suspicious Compression Spike" : "Uniform Compression",
+        badgeType: isHigh ? "danger" : "success",
+        score: pct + "%",
+        text: `When an image is edited and re-saved as a JPEG, newly altered or spliced regions save at a distinct compression level compared to untouched pixels. Your image has an error level discrepancy of ${pct}%. ${isHigh ? 'The glowing patches on the ELA heatmap highlight areas that were likely manipulated or pasted in.' : 'The error distribution is even across the entire surface, showing no localized editing hotspots.'}`
+      };
+    },
+    sift: () => {
+      const count = data.sift.match_count;
+      const isCopy = data.sift.is_copy_move || count >= 6;
+      return {
+        title: "SIFT Keypoint Matching (Copy-Move)",
+        icon: "fa-vector-square",
+        badge: isCopy ? "Duplication Found" : "No Repeated Regions",
+        badgeType: isCopy ? "danger" : "success",
+        score: data.sift.percent + "%",
+        text: `SIFT searches for duplicated visual descriptors inside the same image. We detected ${count} matching feature points. ${isCopy ? 'This indicates a copy-move or clone stamp forgery, where content was copied from one place to another to duplicate an object or hide a region.' : 'No unnatural recurring patterns were discovered, ruling out clone-stamping.'}`
+      };
+    },
+    cnn: () => {
+      const avail = data.cnn && data.cnn.available && data.cnn.score !== null;
+      return {
+        title: "Convolutional Neural Network (CNN)",
+        icon: "fa-brain",
+        badge: avail ? (data.cnn.is_trained ? "Trained Model" : "Baseline") : "Optional",
+        badgeType: avail ? "warning" : "warning",
+        score: avail ? data.cnn.percent + "%" : "N/A",
+        text: avail
+          ? `The CNN analyzes deep visual textures and spatial patterns learned from training on authentic vs manipulated datasets.`
+          : `Deep learning CNN classifier is optional. It works alongside classical computer vision algorithms once trained on the CASIA dataset.`
+      };
+    },
+    meta: () => {
+      const sw = data.metadata.software;
+      const edited = data.metadata.is_edited;
+      const hasExif = data.metadata.has_exif;
+      return {
+        title: "EXIF Metadata Inspection",
+        icon: "fa-tags",
+        badge: edited ? "Editor Tagged" : (hasExif ? "Original Header" : "Stripped Header"),
+        badgeType: edited ? "danger" : (hasExif ? "success" : "warning"),
+        score: data.metadata.percent + "%",
+        text: edited
+          ? `Direct software footprint detected: '${sw}'. The file header confirms it was processed in an image editing application.`
+          : (!hasExif
+              ? `No camera metadata found. While typical for messaging apps (WhatsApp, Instagram), original camera RAW/JPEG photos normally store device hardware specifications.`
+              : `Camera model identified (${data.metadata.camera || 'Detected'}) with unmanipulated capture headers.`)
+      };
+    },
+    noise: () => {
+      const score = data.noise.percent;
+      const isHigh = data.noise.score > 0.35;
+      return {
+        title: "Sensor Noise Consistency (PRNU)",
+        icon: "fa-wave-square",
+        badge: isHigh ? "Inconsistent Noise Grain" : "Homogeneous Noise Grain",
+        badgeType: isHigh ? "danger" : "success",
+        score: score + "%",
+        text: `Every camera sensor generates a characteristic, subtle noise pattern. In spliced images, noise levels differ across regions. Your image recorded a noise inconsistency of ${data.noise.inconsistency}. ${isHigh ? 'Multiple regional variance outliers were detected, indicating elements may have been composited from different camera sources.' : 'The noise grain is consistent throughout the frame, typical of a single original shot.'}`
+      };
+    },
+    ghost: () => {
+      const ratio = Math.round(data.ghost.ghost_ratio * 100);
+      const isGhost = data.ghost.score > 0.3;
+      return {
+        title: "JPEG Ghost Analysis",
+        icon: "fa-ghost",
+        badge: isGhost ? "Double-Compression Shadow" : "Single JPEG History",
+        badgeType: isGhost ? "warning" : "success",
+        score: data.ghost.percent + "%",
+        text: `JPEG Ghost detects when a region imported from another JPEG was re-compressed at a different quality level (tested at Q=${data.ghost.best_quality}). Ghost ratio is ${ratio}%. ${isGhost ? 'Discovered secondary compression residuals, suggesting composite insertion.' : 'No secondary compression artifacts found.'}`
+      };
+    },
+    freq: () => {
+      const grid = data.frequency.grid_score;
+      const isHigh = grid > 0.45;
+      return {
+        title: "2D-FFT Frequency Analysis (AI / Resampling)",
+        icon: "fa-chart-line",
+        badge: isHigh ? "Periodic Lattice Detected" : "Natural Falloff",
+        badgeType: isHigh ? "danger" : "success",
+        score: data.frequency.percent + "%",
+        text: `Analyzes the Fourier spectrum for mathematical periodicities. Generative AI tools (GANs, Diffusion) and resizing operations introduce periodic frequency spikes. Grid artifact index is ${grid}. ${isHigh ? 'High periodic energy detected, suggesting synthetic AI generation or strong resampling.' : 'Spectrum follows natural 1/f photographic frequency decay.'}`
+      };
+    }
+  };
+
+  cards.forEach(card => {
+    card.onclick = () => {
+      cards.forEach(c => c.classList.remove('active-card'));
+      card.classList.add('active-card');
+
+      const tech = card.dataset.tech;
+      if (explanationsMap[tech]) {
+        const info = explanationsMap[tech]();
+        panelTitle.textContent = info.title;
+        panelIcon.className = `fa ${info.icon}`;
+        panelBadge.textContent = info.badge;
+        panelBadge.className = `ai-badge ai-badge-${info.badgeType}`;
+        panelScoreVal.textContent = info.score;
+        panelExplanation.textContent = info.text;
+
+        panel.classList.remove('hidden');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    };
+  });
 }
 
 function animateBar(id, val) {

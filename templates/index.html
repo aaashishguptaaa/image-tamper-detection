@@ -108,25 +108,6 @@
     </div>
   </div>
 
-  <!-- ── ★ AI Forensic Investigator Explanation ── -->
-  <div class="ai-report-card" id="aiReportCard">
-    <div class="ai-report-header">
-      <div class="ai-header-title">
-        <i class="fa fa-robot"></i>
-        <span>AI Forensic Reasoning Engine</span>
-      </div>
-      <span class="ai-status-pill">Automated Insight</span>
-    </div>
-    <div class="ai-summary-box">
-      <p id="aiSummaryText">Generating intelligent forensic breakdown...</p>
-    </div>
-    <div class="ai-breakdown-container" id="aiBreakdownList"></div>
-    <div class="ai-advice-box">
-      <i class="fa fa-shield-alt"></i>
-      <span id="aiAdviceText">Forensic evaluation advisory will appear here.</span>
-    </div>
-  </div>
-
   <!-- ── Flags / Warnings ── -->
   <div id="flagsContainer" class="flags-container hidden">
     <h3><i class="fa fa-exclamation-triangle"></i> Forensic Findings</h3>
@@ -134,58 +115,82 @@
   </div>
 
   <!-- ── Score Breakdown — 7 Techniques ── -->
-  <h3 class="section-title">📊 Analysis Breakdown — 7 Techniques</h3>
+  <h3 class="section-title">
+    <span>📊 Analysis Breakdown — 7 Techniques</span>
+    <span class="click-hint"><i class="fa fa-mouse-pointer"></i> Click any card to see AI explanation</span>
+  </h3>
+
   <div class="scores-grid-7">
 
-    <div class="score-card ela-card">
-      <div class="score-header"><i class="fa fa-layer-group"></i><span>ELA</span></div>
+    <div class="score-card ela-card clickable-card" data-tech="ela">
+      <div class="score-header"><i class="fa fa-layer-group"></i><span>ELA</span><i class="fa fa-info-circle card-info-icon"></i></div>
       <div class="progress-bar"><div class="progress-fill ela-fill" id="elaBar"></div></div>
       <span class="score-val" id="elaScore">--%</span>
       <p class="score-desc">Compression error analysis</p>
     </div>
 
-    <div class="score-card sift-card">
-      <div class="score-header"><i class="fa fa-vector-square"></i><span>SIFT</span></div>
+    <div class="score-card sift-card clickable-card" data-tech="sift">
+      <div class="score-header"><i class="fa fa-vector-square"></i><span>SIFT</span><i class="fa fa-info-circle card-info-icon"></i></div>
       <div class="progress-bar"><div class="progress-fill sift-fill" id="siftBar"></div></div>
       <span class="score-val" id="siftScore">--%</span>
       <p class="score-desc">Copy-move: <span id="matchCount">0</span> matches</p>
     </div>
 
-    <div class="score-card cnn-card">
-      <div class="score-header"><i class="fa fa-brain"></i><span>CNN</span></div>
+    <div class="score-card cnn-card clickable-card" data-tech="cnn">
+      <div class="score-header"><i class="fa fa-brain"></i><span>CNN</span><i class="fa fa-info-circle card-info-icon"></i></div>
       <div class="progress-bar"><div class="progress-fill cnn-fill" id="cnnBar"></div></div>
       <span class="score-val" id="cnnScore">--%</span>
       <p class="score-desc" id="cnnDesc">Deep learning</p>
     </div>
 
-    <div class="score-card meta-card">
-      <div class="score-header"><i class="fa fa-tags"></i><span>EXIF Metadata</span></div>
+    <div class="score-card meta-card clickable-card" data-tech="meta">
+      <div class="score-header"><i class="fa fa-tags"></i><span>EXIF Metadata</span><i class="fa fa-info-circle card-info-icon"></i></div>
       <div class="progress-bar"><div class="progress-fill meta-fill" id="metaBar"></div></div>
       <span class="score-val" id="metaScore">--%</span>
       <p class="score-desc" id="metaDesc">Camera & software info</p>
     </div>
 
-    <div class="score-card noise-card">
-      <div class="score-header"><i class="fa fa-wave-square"></i><span>Noise Pattern</span></div>
+    <div class="score-card noise-card clickable-card" data-tech="noise">
+      <div class="score-header"><i class="fa fa-wave-square"></i><span>Noise Pattern</span><i class="fa fa-info-circle card-info-icon"></i></div>
       <div class="progress-bar"><div class="progress-fill noise-fill" id="noiseBar"></div></div>
       <span class="score-val" id="noiseScore">--%</span>
       <p class="score-desc" id="noiseDesc">Sensor noise inconsistency</p>
     </div>
 
-    <div class="score-card ghost-card">
-      <div class="score-header"><i class="fa fa-ghost"></i><span>JPEG Ghost</span></div>
+    <div class="score-card ghost-card clickable-card" data-tech="ghost">
+      <div class="score-header"><i class="fa fa-ghost"></i><span>JPEG Ghost</span><i class="fa fa-info-circle card-info-icon"></i></div>
       <div class="progress-bar"><div class="progress-fill ghost-fill" id="ghostBar"></div></div>
       <span class="score-val" id="ghostScore">--%</span>
       <p class="score-desc" id="ghostDesc">Double compression detection</p>
     </div>
 
-    <div class="score-card freq-card">
-      <div class="score-header"><i class="fa fa-chart-line"></i><span>FFT / AI Check</span></div>
+    <div class="score-card freq-card clickable-card" data-tech="freq">
+      <div class="score-header"><i class="fa fa-chart-line"></i><span>FFT / AI Check</span><i class="fa fa-info-circle card-info-icon"></i></div>
       <div class="progress-bar"><div class="progress-fill freq-fill" id="freqBar"></div></div>
       <span class="score-val" id="freqScore">--%</span>
       <p class="score-desc">Frequency domain analysis</p>
     </div>
 
+  </div>
+
+  <!-- ── Interactive Detail / Explanation Drawer ── -->
+  <div class="tech-detail-panel hidden" id="techDetailPanel">
+    <div class="panel-header">
+      <div class="panel-title-area">
+        <i id="panelIcon" class="fa fa-lightbulb"></i>
+        <h4 id="panelTitle">Technique Details</h4>
+        <span class="ai-badge" id="panelBadge">Status</span>
+      </div>
+      <button class="panel-close-btn" id="closeDetailPanel"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="panel-body">
+      <div class="panel-score-callout">
+        <span class="callout-label">Calculated Score:</span>
+        <strong id="panelScoreVal">0%</strong>
+        <span class="callout-sub" id="panelScoreSub">probability indicator</span>
+      </div>
+      <p class="panel-explanation" id="panelExplanation">Click any card to read what it measured on your image.</p>
+    </div>
   </div>
 
   <!-- ── Metadata Info Card ── -->
