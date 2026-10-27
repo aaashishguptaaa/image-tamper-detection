@@ -143,8 +143,8 @@ To train the CNN with your own dataset:
 
 ## 👨‍💻 Author
 
-**Aashish Gupta**
-Final Year B.E. | Image Processing & Computer Vision
+**Aashish Gupta**  
+Computer Science & Engineering | Image Processing & Computer Vision  
 GitHub: [@aaashishguptaaa](https://github.com/aaashishguptaaa)
 
 ---
