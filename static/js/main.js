@@ -17,34 +17,53 @@ const resultsSection  = document.getElementById('resultsSection');
 let selectedFile = null;
 
 // Drag & drop
-dropZone.addEventListener('dragover', e => {
+// Direct file selector & DropZone event listeners
+const chooseFileBtn = document.getElementById('chooseFileBtn');
+
+if (chooseFileBtn) {
+  chooseFileBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.click();
+  });
+}
+
+dropZone.addEventListener('click', () => {
+  fileInput.click();
+});
+
+dropZone.addEventListener('dragover', (e) => {
   e.preventDefault();
   dropZone.classList.add('drag-over');
 });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
+
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('drag-over');
+});
+
+dropZone.addEventListener('drop', (e) => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) setFile(file);
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    setFile(e.dataTransfer.files[0]);
+  }
 });
-dropZone.addEventListener('click', () => fileInput.click());
+
 fileInput.addEventListener('change', () => {
-  if (fileInput.files[0]) setFile(fileInput.files[0]);
+  if (fileInput.files && fileInput.files.length > 0) {
+    setFile(fileInput.files[0]);
+  }
 });
 
 function setFile(file) {
   if (!file) return;
-  const name = file.name.toLowerCase();
-  const validExt = name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png') || name.endsWith('.bmp') || name.endsWith('.tiff') || name.endsWith('.webp');
-  const isImageMime = file.type && file.type.startsWith('image/');
+  console.log('[Upload] Selected file:', file.name, file.type, file.size);
   
-  if (!validExt && !isImageMime) {
-    alert('Please upload a valid image file (JPG, PNG, BMP, TIFF, WEBP).');
-    return;
-  }
   selectedFile = file;
-  previewImg.src = URL.createObjectURL(file);
+  try {
+    previewImg.src = URL.createObjectURL(file);
+  } catch (err) {
+    console.error('ObjectURL error:', err);
+  }
   previewName.textContent = file.name;
   previewContainer.classList.remove('hidden');
   analyzeBtn.disabled = false;
