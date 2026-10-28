@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Image Forgery Detection System</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='3.1') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body>
@@ -42,16 +42,16 @@
 <section class="upload-section">
   <div class="card upload-card">
     <h2><i class="fa fa-upload"></i> Upload an Image</h2>
-    <p class="subtitle">Supports JPG, PNG, WEBP, BMP, TIFF, JFIF, HEIC — Max 16 MB</p>
+    <p class="subtitle">Supports JPG, PNG, BMP, TIFF — Max 16 MB</p>
 
-        <input type="file" id="fileInput" accept="image/*" style="display:none;" />
     <div class="drop-zone" id="dropZone">
       <i class="fa fa-image drop-icon"></i>
       <p>Drag & Drop your image here</p>
       <p class="or-text">— or —</p>
-      <button type="button" class="btn btn-primary" id="chooseFileBtn">
+      <label class="btn btn-primary" for="fileInput">
         <i class="fa fa-folder-open"></i> Choose File
-      </button>
+      </label>
+      <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.bmp,.tiff" hidden/>
     </div>
 
     <div id="previewContainer" class="preview-container hidden">
@@ -281,6 +281,6 @@
   <p>Image Forgery Detection System</p>
 </footer>
 
-<script src="{{ url_for('static', filename='js/main.js', v='3.1') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

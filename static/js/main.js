@@ -17,53 +17,33 @@ const resultsSection  = document.getElementById('resultsSection');
 let selectedFile = null;
 
 // Drag & drop
-// Direct file selector & DropZone event listeners
-const chooseFileBtn = document.getElementById('chooseFileBtn');
-
-if (chooseFileBtn) {
-  chooseFileBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    fileInput.click();
-  });
-}
-
-dropZone.addEventListener('click', () => {
-  fileInput.click();
-});
-
-dropZone.addEventListener('dragover', (e) => {
+dropZone.addEventListener('dragover', e => {
   e.preventDefault();
   dropZone.classList.add('drag-over');
 });
-
-dropZone.addEventListener('dragleave', () => {
-  dropZone.classList.remove('drag-over');
-});
-
-dropZone.addEventListener('drop', (e) => {
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
-  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-    setFile(e.dataTransfer.files[0]);
-  }
+  const file = e.dataTransfer.files[0];
+  if (file) setFile(file);
 });
-
+dropZone.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => {
-  if (fileInput.files && fileInput.files.length > 0) {
-    setFile(fileInput.files[0]);
-  }
+  if (fileInput.files[0]) setFile(fileInput.files[0]);
 });
 
 function setFile(file) {
-  if (!file) return;
-  console.log('[Upload] Selected file:', file.name, file.type, file.size);
+  const allowed = ['image/jpeg', 'image/png', 'image/bmp', 'image/tiff'];
+  const name = file.name.toLowerCase();
+  const validExt = name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png') || name.endsWith('.bmp') || name.endsWith('.tiff');
   
-  selectedFile = file;
-  try {
-    previewImg.src = URL.createObjectURL(file);
-  } catch (err) {
-    console.error('ObjectURL error:', err);
+  if (!validExt && !allowed.includes(file.type)) {
+    alert('Please upload a valid image file (JPG, PNG, BMP, TIFF).');
+    return;
   }
+  selectedFile = file;
+  previewImg.src = URL.createObjectURL(file);
   previewName.textContent = file.name;
   previewContainer.classList.remove('hidden');
   analyzeBtn.disabled = false;
@@ -140,12 +120,6 @@ analyzeBtn.addEventListener('click', async () => {
       method: 'POST',
       body: formData
     });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(Server status : );
-    }
-
     const data = await res.json();
 
     stopLoading();
