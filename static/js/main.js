@@ -120,6 +120,12 @@ analyzeBtn.addEventListener('click', async () => {
       method: 'POST',
       body: formData
     });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(Server status : );
+    }
+
     const data = await res.json();
 
     stopLoading();

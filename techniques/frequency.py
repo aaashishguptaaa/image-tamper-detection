@@ -33,7 +33,12 @@ def analyze_frequency_domain(image_path: str) -> dict:
     if image is None:
         raise ValueError(f"Cannot read: {image_path}")
 
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).astype(np.float32)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    h, w = gray.shape
+    if max(h, w) > 1024:
+        scale = 1024.0 / max(h, w)
+        gray = cv2.resize(gray, (int(w * scale), int(h * scale)))
+    gray = gray.astype(np.float32)
 
     # ── Compute 2D FFT ────────────────────────────────────────────
     fft    = np.fft.fft2(gray)

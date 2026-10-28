@@ -18,6 +18,20 @@ from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 
 # ── Core Techniques ────────────────────────────────────────────────
+from PIL import Image
+
+def optimize_input_image(path, max_dim=1280):
+    try:
+        with Image.open(path) as img:
+            w, h = img.size
+            if max(w, h) > max_dim:
+                ratio = max_dim / float(max(w, h))
+                new_size = (int(w * ratio), int(h * ratio))
+                resized = img.resize(new_size, Image.Resampling.LANCZOS)
+                resized.save(path, quality=92, optimize=True)
+    except Exception as e:
+        print(f'Resize error: {e}')
+
 from techniques.ela       import perform_ela, compute_ela_score, get_ela_heatmap
 from techniques.sift      import detect_copy_move
 from techniques.metadata  import analyze_metadata
@@ -129,6 +143,7 @@ def analyze():
         filename = secure_filename(f"{uid}_input.{ext}")
         save_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(save_path)
+        optimize_input_image(save_path)
 
         results = {}
 
