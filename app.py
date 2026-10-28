@@ -20,7 +20,7 @@ from werkzeug.utils import secure_filename
 # ── Core Techniques ────────────────────────────────────────────────
 from PIL import Image
 
-def optimize_input_image(path, max_dim=1280):
+def optimize_input_image(path, max_dim=960):
     try:
         with Image.open(path) as img:
             w, h = img.size
@@ -308,6 +308,12 @@ def analyze():
                 "side_by_side": ndarray_to_base64(side_by_side)
             }
         }
+
+        try:
+            if os.path.exists(save_path):
+                os.remove(save_path)
+        except Exception:
+            pass
 
         return jsonify(response)
 

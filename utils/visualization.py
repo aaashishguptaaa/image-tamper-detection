@@ -63,14 +63,19 @@ def add_forgery_border(image: np.ndarray, is_fake: bool) -> np.ndarray:
     return bordered
 
 
-def ndarray_to_base64(image_array: np.ndarray, fmt: str = "PNG") -> str:
-    """Convert numpy array (BGR) to base64 string for HTML embedding."""
+def ndarray_to_base64(image_array: np.ndarray, max_dim: int = 640, quality: int = 75) -> str:
+    """Convert numpy array (BGR) to lightweight JPEG base64 string for ultra-low memory cloud response."""
+    h, w = image_array.shape[:2]
+    if max(h, w) > max_dim:
+        scale = max_dim / float(max(h, w))
+        image_array = cv2.resize(image_array, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+
     rgb = cv2.cvtColor(image_array, cv2.COLOR_BGR2RGB)
     pil_img = Image.fromarray(rgb)
     buffer = BytesIO()
-    pil_img.save(buffer, format=fmt)
+    pil_img.save(buffer, format="JPEG", quality=quality, optimize=True)
     b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-    return f"data:image/{fmt.lower()};base64,{b64}"
+    return f"data:image/jpeg;base64,{b64}"
 
 
 def image_path_to_base64(image_path: str) -> str:
