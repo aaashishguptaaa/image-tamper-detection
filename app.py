@@ -57,7 +57,7 @@ app = Flask(__name__)
 app.secret_key = "forgery-detection-ipcv-2025"
 
 UPLOAD_FOLDER  = os.path.join("static", "uploads")
-ALLOWED_EXT    = {"jpg", "jpeg", "png", "bmp", "tiff"}
+ALLOWED_EXT    = {'jpg', 'jpeg', 'png', 'bmp', 'tiff', 'tif', 'webp', 'jfif', 'heic', 'heif'}
 MAX_MB         = 16
 
 app.config["UPLOAD_FOLDER"]       = UPLOAD_FOLDER
@@ -144,6 +144,16 @@ def analyze():
         save_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(save_path)
         optimize_input_image(save_path)
+        # ── Normalize / Convert to Standard RGB JPEG ──────────────
+        try:
+            with Image.open(save_path) as im:
+                rgb_im = im.convert('RGB')
+                norm_filename = secure_filename(f"{uid}_input.jpg")
+                save_path = os.path.join(app.config["UPLOAD_FOLDER"], norm_filename)
+                rgb_im.save(save_path, format='JPEG', quality=95)
+        except Exception as conv_err:
+            print(f"Format normalization error: {conv_err}")
+
 
         results = {}
 

@@ -34,7 +34,7 @@ fileInput.addEventListener('change', () => {
 });
 
 function setFile(file) {
-  const allowed = ['image/jpeg', 'image/png', 'image/bmp', 'image/tiff'];
+  // Universal image validation
   const name = file.name.toLowerCase();
   const validExt = name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png') || name.endsWith('.bmp') || name.endsWith('.tiff');
   
